@@ -6,7 +6,7 @@ const auth = async function(req,res,next) {
         if(!header) {
             return res.status(400).send({status: false, msg: "Authentication token is required"})
         } else{
-            let token = header
+            let token = header && header.split(' ')[1]
             let decodedToken = jwt.verify(token,"Group37")
             if(decodedToken) {
                 req.user = decodedToken
@@ -23,39 +23,3 @@ const auth = async function(req,res,next) {
 module.exports.auth = auth
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//             let token = header && header.split(' ')[1]

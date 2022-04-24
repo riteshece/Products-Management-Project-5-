@@ -39,60 +39,47 @@ aws.config.update({
   };
 
 
-// ************************************************************* POST /register ************************************************************ //
+// ******************************************* POST /register ***************************************** //
 
 const createUser = async function(req,res) {
     try{
-        const body = req.body.data;
-        const JSONbody = JSON.parse(body)
+        const JSONbody = req.body
 
+       
         //Validate body 
         if (!validator.isValidBody(JSONbody)) {
             return res.status(400).send({ status: false, msg: "User body should not be empty" });
         }
 
-        // Validate query (it must not be present)
-        const query = req.query;
-        if(validator.isValidBody(query)) {
-            return res.status(400).send({ status: false, msg: "Invalid parameters"});
-        }
-
-        // Validate params (it must not be present)
-        const params = req.params;
-        if(validator.isValidBody(params)) {
-            return res.status(400).send({ status: false, msg: "Invalid parameters"});
-        }
-
-
         const {fname, lname, email, password, phone, address} = JSONbody
 
         // Validate fname
-        if(!validator.isValid(fname.trim())) {
+        if(!validator.isValid(fname)) {
             return res.status(400).send({status: false, message: "fname must be present"})
         }
 
         // Validate lname
-        if(!validator.isValid(lname.trim())) {
+        if(!validator.isValid(lname)) {
             return res.status(400).send({status: false, message: "lname must be present"})
         }
 
         // Validate email
-        if(!validator.isValid(email.trim())) {
+        if(!validator.isValid(email)) {
             return res.status(400).send({status: false, message: "email must be present"})
         }
 
         // Validation of email id
-        if(!validator.isValidEmail(email.trim())) {
+        if(!validator.isValidEmail(email)){
             return res.status(400).send({status: false, message: "Invalid email id"})
         }
 
         // Validate password
-        if(!validator.isValid(password.trim())) {
-            return res.status(400).send({status: false, message: "password must be present"})
+        if(!validator.isValid(password)) {
+            return res.status(400).send({status: false, message: "password is require"})
         }
 
         // Validation of password
-        if(!validator.isValidPassword(password.trim())) {
+        if(!validator.isValidPassword(password)) {
             return res.status(400).send({status: false, message: "Invalid password"})
         }
 
@@ -132,7 +119,7 @@ const createUser = async function(req,res) {
         let files = req.files;
         if (files && files.length > 0) {
         let uploadedFileURL = await uploadFile( files[0] );  
-        // res.status(201).send({ status: true,msg: "file uploaded succesfully", data: uploadedFileURL });
+         //res.status(201).send({ status: true,msg: "file uploaded successfully", data: uploadedFileURL });
 
         // encrypted password
         const encryptPassword = await bcrypt.hash(password,10)
@@ -170,18 +157,6 @@ const login = async function(req,res) {
             return res.status(400).send({ status: false, msg: "User body should not be empty" });
         }
 
-        // Validate query (it must not be present)
-        const query = req.query;
-        if(validator.isValidBody(query)) {
-            return res.status(400).send({ status: false, msg: "Invalid parameters"});
-        }
-
-        // Validate params (it must not be present)
-        const params = req.params;
-        if(validator.isValidBody(params)) {
-            return res.status(400).send({ status: false, msg: "Invalid parameters"});
-        }
-
 
         let email = body.email;
         let password = body.password;
@@ -210,7 +185,7 @@ const login = async function(req,res) {
         if(email && password) {
             let user = await UserModel.findOne({email})
             if(!user) {
-                return res.status(400).send({status: false, message: "Email doesnot exist. Kindly create a new user"})
+                return res.status(400).send({status: false, message: "Email does not exist. Kindly create a new user"})
             }
 
             let pass = await bcrypt.compare(password, user.password);
@@ -218,7 +193,7 @@ const login = async function(req,res) {
                 const Token = jwt.sign({
                     userId:user._id,
                     iat: Math.floor(Date.now() / 1000), //issue date
-                    exp: Math.floor(Date.now() / 1000) + 60*60 //expiry date and time (30*60 = 30 min || 60*60 = 1 hr)
+                    exp: Math.floor(Date.now() / 1000) + 1800*60 //expiry date and time (30*60 = 30 min || 60*60 = 1 hr)
                 }, "Group37")
                 // res.header('x-api-key', Token)
 
@@ -249,25 +224,14 @@ const getUser = async function(req,res) {
         // Validate of body(It must not be present)
         const body = req.body;
         if(validator.isValidBody(body)) {
-            return res.status(400).send({ status: false, msg: "Body must not be present"})
+            return res.status(400).send({ status: false, msg: "Body must be empty"})
         }
 
-        // Validate query(it must not be present)
-        const query = req.query;
-        if(validator.isValidBody(query)) {
-            return res.status(400).send({ status: false, msg: "Query must not be present"})
-        }
-
-        // Validate params
-        const params = req.params;
-        if(!validator.isValidBody(params)) {
-            return res.status(400).send({status: false, msg: "Credentials are required"})
-        }
-
+        
         let userId = req.params.userId
 
-        if(req.user.userId != params.userId) {
-            return res.status(401).send({ status: false, msg: "UserId doesnot match"})
+        if(req.user.userId != userId) {
+            return res.status(401).send({ status: false, msg: "UserId does not match"})
         }
 
         let findUser = await UserModel.findOne({ _id: userId})
@@ -280,21 +244,22 @@ const getUser = async function(req,res) {
         console.log("This is the error :", err.message)
         res.status(500).send({ msg: "Error", error: err.message })
     }
-}
+    }
 
-module.exports.getUser = getUser
-
-
+    module.exports.getUser = getUser
 
 
 
-// ******************************************************* /user/:userId/profile ******************************************************* //
+
+
+// ************************************************ /user/:userId/profile *************************************** //
 
 const update = async function(req,res) {
     try {
         // Validate body
-        const reqBody = JSON.parse(req.body.data)
-        if(!validator.isValidBody(reqBody)) {
+        const body = req.body
+        // const reqBody = JSON.parse(req.body.data)
+        if(!validator.isValidBody(body)) {
             return res.status(400).send({status: false, msg: "Details must be present to update"})
         }
 
@@ -306,17 +271,14 @@ const update = async function(req,res) {
 
         const userFound = await UserModel.findOne({_id: userId})
         if(!userFound) {
-            return res.status(404).send({status: false, msg: "User does not exist"})
+            return res.status(400).send({status: false, msg: "User does not exist"})
         }
-
-
-        // AUTHORISATION
-        if(userId !== req.user.userId) {
+         // AUTHORISATION
+         if(userId !== req.user.userId) {
             return res.status(401).send({status: false, msg: "Unauthorised access"})
         }
-
         // Destructuring
-        let{fname, lname, email, phone, password, address} = reqBody;
+        let{fname, lname, email, phone, password, address} = body;
         let updatedData = {}
         if(validator.isValid(fname)) {
             updatedData['fname'] = fname
@@ -450,3 +412,6 @@ const update = async function(req,res) {
 }
 
 module.exports.update = update
+
+
+
